@@ -1,0 +1,67 @@
+package nihkil.co.in.siem.config;
+
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+Problem 3: Thread-Safe List Wrapper
+Create a class SafeList that wraps a List<Integer> and provides:
+addIfAbsent(int value)
+remove(int value)
+contains(int value)
+Requirements:
+Prevent duplicate entries
+Must be thread-safe even under concurrent calls
+ */
+
+class SafeList{
+	private final ConcurrentHashMap<Integer, Boolean> map = new ConcurrentHashMap<Integer, Boolean>();
+
+	public boolean  add(int x) {
+	    return map.putIfAbsent(x, Boolean.TRUE) == null;	}
+	public boolean contains(int val) {
+     return map.containsKey(val);
+	}
+	public boolean remove(int val) {
+		return map.remove(val) !=null;
+	}
+	
+}
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+    	 SafeList safeList = new SafeList();
+
+         Thread t1 = new Thread(() -> {
+             for (int i = 0; i < 10; i++) {
+                 boolean added = safeList.add(i);
+                 System.out.println("Thread 1 adding " + i + " -> " + added);
+             }
+         });
+
+         Thread t2 = new Thread(() -> {
+             for (int i = 0; i < 10; i++) {
+                 boolean added = safeList.add(i);
+                 System.out.println("Thread 2 adding " + i + " -> " + added);
+             }
+         });
+
+         Thread t3 = new Thread(() -> {
+             for (int i = 0; i < 10; i++) {
+                 if (safeList.contains(i)) {
+                     boolean removed = safeList.remove(i);
+                     System.out.println("Thread 3 removing " + i + " -> " + removed);
+                 }
+             }
+         });
+
+         t1.start();
+         t2.start();
+         t3.start();
+
+         t1.join();
+         t2.join();
+         t3.join();
+
+         System.out.println("Execution finished.");
+    
+    }
+}
