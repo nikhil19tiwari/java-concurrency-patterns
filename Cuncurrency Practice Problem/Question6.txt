@@ -1,0 +1,68 @@
+package velox.co.in.siem.config;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+Problem 6: Configuration Registry
+Design a ConfigRegistry:
+Stores key-value configuration
+Initialized once at startup
+Requirements:
+Safe for concurrent reads without locking
+Prevent modification after initialization
+ */
+class ConfigRegistry{
+	private   ConcurrentHashMap<Integer, String> map=new ConcurrentHashMap<>();
+	private volatile boolean flag = true;
+    public void initlize() {flag= false;}
+    ConfigRegistry(List<String> ans){
+    	if(flag) {
+    		for(int i=0;i<ans.size();i++) {   			
+    		map.putIfAbsent(i, ans.get(i));
+    		}
+    		initlize();
+    	}
+    }
+    public void safeRead(int data) {
+    	System.out.println("data hai :"+map.get(data));
+    }
+   
+}
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+    List<String> data = new ArrayList<>();
+    for(int i=0;i<1000;i++) {
+    	data.add("Siem"+i);
+    }
+    ConfigRegistry config = new ConfigRegistry(data);
+    ExecutorService executor = Executors.newFixedThreadPool(3);
+    Runnable r1 = ()->{
+    	for(int i=0;i<300;i++) {
+    		config.safeRead(i);
+    	}
+    };
+    Runnable r2 = ()->{
+    	for(int i=300;i<500;i++) {
+    		config.safeRead(i);
+    	}
+    };
+    Runnable r3 = ()->{
+    	for(int i=500;i<1000;i++) {
+    		config.safeRead(i);
+    	}
+    };
+    
+    executor.submit(r1);
+    executor.submit(r2);
+    executor.submit(r3);
+    executor.shutdown();
+    executor.awaitTermination(1, TimeUnit.MINUTES);
+   
+    }
+}

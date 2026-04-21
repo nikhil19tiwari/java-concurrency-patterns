@@ -1,0 +1,94 @@
+package nikhil.co.in.siem.config;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+/**
+Problem 4: Bank Transfer System
+Design a system with:
+Account class (id, balance)
+Bank class with:
+transfer(Account from, Account to, int amount)
+Requirements:
+Avoid race conditions
+Prevent deadlocks
+Maintain consistent balances
+ */
+
+class Account{
+	private final int accountNumber;
+	private  int balance ;
+	Account(int accountNumber,int balance){
+		this.accountNumber = accountNumber;
+		this.balance =  balance;
+	}
+	public void withdraw(int x) {
+		if(x>balance)throw new RuntimeException("InSufficient Balance");
+		balance-=x;
+	}
+	public   void deposite(int x) {
+		balance+=x;
+	}
+	
+	public int getAccountNumber() {
+		return accountNumber;
+	}
+	public  int getBalance() {
+		return balance;
+	}
+	
+}
+class Bank{
+	private ConcurrentHashMap<Integer, Account> map = new ConcurrentHashMap<Integer, Account>();
+	public void add(Account account) {
+		map.putIfAbsent(account.getAccountNumber(), account);
+	}
+	 public void transfer(int fromAcc, int toAcc, int amount) {
+	        Account from = map.get(fromAcc);
+	        Account to = map.get(toAcc);
+	        Account first = fromAcc < toAcc ? from : to;
+	        Account second = fromAcc < toAcc ? to : from;
+	        synchronized (first) {
+	            synchronized (second) {
+	            	 if (from.getBalance() < amount) {
+	                     throw new RuntimeException("Insufficient Balance");
+	                 }
+	            	 from.withdraw(amount);
+	            	 to.deposite(amount);
+	            }
+	        }
+	    }
+	public void get(Account acc) {
+		System.out.println(acc.getBalance());
+	}
+}
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+    	 Bank b = new Bank();
+    	Account a1 = new Account(111,1000);
+    	Account a2 = new Account(222,1000);
+    	 b.add(a1);
+    	 b.add(a2);
+    	 
+    	 Runnable r1 =()->{
+    		 for(int i=0;i<1000;i++) {
+    			 b.transfer(111, 222, 1);
+    		 }
+    	 };
+    	 Runnable r2 =()->{
+    		 for(int i=0;i<1000;i++) {
+    			 b.transfer(222, 111, 1);
+    		 }
+    	 };
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        executor.submit(r1);
+        executor.submit(r2);
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.MINUTES);
+        
+        b.get(a1);
+        b.get(a2);
+    }
+}

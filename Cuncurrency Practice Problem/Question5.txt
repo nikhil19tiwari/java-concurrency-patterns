@@ -1,0 +1,58 @@
+package nikhil.co.in.siem.config;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+Problem 5: Task Processing Service
+Create a service where:
+Multiple threads submit tasks
+Tasks are processed and counted
+Requirements:
+Ensure accurate task count
+Avoid shared mutable state issues
+Support high concurrency
+ */
+
+class Service{
+	AtomicLong processCount = new AtomicLong(0);
+	public void task() {
+		//some task
+		processCount.incrementAndGet();
+	}
+	public void getcount() {
+		System.out.println(processCount.get());
+	}
+}
+
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+    	Service s = new Service();
+    	 Runnable r1 =()->{
+    		 for(int i=0;i<1000;i++) {
+    			s.task();
+    		 }
+    	 };
+    	 Runnable r2 =()->{
+    		 for(int i=0;i<1000;i++) {
+    			 s.task();
+    		 }
+    	 };
+    	 Runnable r3 =()->{
+    		 for(int i=0;i<1000;i++) {
+    			 s.task();
+    		 }
+    	 };
+    	 
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        executor.submit(r1);
+        executor.submit(r2);
+        executor.submit(r3);
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.MINUTES);
+        s.getcount();
+       
+    }
+}
