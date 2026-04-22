@@ -1,0 +1,43 @@
+package nikhil.co.in.siem.config;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+Problem 8: Immutable User Object
+Design an immutable class User:
+Fields: name, email, roles (List<String>)
+Requirements:
+No thread can modify state after creation
+Safe to share across threads without synchronization
+*/
+
+final class User{
+	private final String name;
+	private final String email;
+	private final List<String> roles;
+	public User(String name,String email,List<String> roles) {
+		this.name = name;
+		this.email = email;
+		this.roles = Collections.unmodifiableList(new ArrayList<>(roles));
+	}
+	public String getName() {
+		return name;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public List<String> getRoles() {
+		return roles;
+	}
+}
+
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+    	List<String> role = new ArrayList<>();
+    	role.add("ADMIN");role.add("USER");
+    	User u = new User("SIEM","Siem@gmail.com",role);
+    	
+    }
+}
