@@ -1,0 +1,160 @@
+package nikhil.co.in.siem.config;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+class Counter{
+	private int count =0;
+	Lock lockA = new ReentrantLock();
+	Lock lockB = new ReentrantLock();
+	
+	public void incrementA() throws InterruptedException {
+		lockA.lock();
+		try {
+			count++;
+			Thread.sleep(1000);
+			lockB.lock();
+			
+		}
+		finally {
+			lockA.unlock();
+			lockB.unlock();
+		}
+	}
+	public void incrementB() throws InterruptedException {
+		lockB.lock();
+		try {
+			count++;
+			Thread.sleep(1000);
+			lockA.lock();
+			
+		}
+		finally {
+			lockA.unlock();
+			lockB.unlock();
+		}
+	}
+	public  void getCount() {
+		System.out.println(count);
+	}
+	
+}
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+    	Counter c = new Counter(); 
+    	ExecutorService executor = Executors.newFixedThreadPool(3);
+    	 for (int i = 0; i < 5; i++) {
+             executor.submit(() -> {
+                 for (int j = 0; j < 1000; j++) {
+                     try {
+						c.incrementA();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+                 }
+             });
+         }
+    	 for (int i = 0; i < 5; i++) {
+    		 executor.submit(() -> {
+    			 for (int j = 0; j < 1000; j++) {
+    				 try {
+    					 c.incrementB();
+    				 } catch (InterruptedException e) {
+    					 e.printStackTrace();
+    				 }
+    			 }
+    		 });
+    	 }
+
+         executor.shutdown();
+         executor.awaitTermination(1, TimeUnit.MINUTES);
+         c.getCount();
+    	
+    	
+    }
+}//this is create Deadlock to fix this 
+RULE: ALWAYS same lock order
+
+👉 A → B everywhere and use trylock and trylock with time
+
+package nikhil.co.in.siem.config;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+class Counter{
+	private int count =0;
+	Lock lockA = new ReentrantLock();
+	Lock lockB = new ReentrantLock();
+	
+	public void incrementA() throws InterruptedException {
+		lockA.lock();
+		try {
+			count++;
+			Thread.sleep(10);
+			lockB.lock();
+			
+		}
+		finally {
+			lockA.unlock();
+			lockB.unlock();
+		}
+	}
+	public void incrementB() throws InterruptedException {
+		lockA.lock();
+		try {
+			count++;
+			Thread.sleep(10);
+			lockB.lock();
+			
+		}
+		finally {
+			lockA.unlock();
+			lockB.unlock();
+		}
+	}
+	public  void getCount() {
+		System.out.println(count);
+	}
+	
+}
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+    	Counter c = new Counter(); 
+    	ExecutorService executor = Executors.newFixedThreadPool(3);
+    	 for (int i = 0; i < 5; i++) {
+             executor.submit(() -> {
+                 for (int j = 0; j < 10; j++) {
+                     try {
+						c.incrementA();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+                 }
+             });
+         }
+    	 for (int i = 0; i < 5; i++) {
+    		 executor.submit(() -> {
+    			 for (int j = 0; j < 10; j++) {
+    				 try {
+    					 c.incrementB();
+    				 } catch (InterruptedException e) {
+    					 e.printStackTrace();
+    				 }
+    			 }
+    		 });
+    	 }
+
+         executor.shutdown();
+         executor.awaitTermination(1, TimeUnit.MINUTES);
+         c.getCount();
+    	
+    	
+    }
+}

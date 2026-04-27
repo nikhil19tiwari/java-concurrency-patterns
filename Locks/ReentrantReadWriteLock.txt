@@ -1,0 +1,65 @@
+package nikhil.co.in.siem.config;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+class SharedData {
+
+    private int data = 0;
+
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+
+    // READ method
+    public void readData() {
+        rwLock.readLock().lock();
+        try {
+            System.out.println(Thread.currentThread().getName() + " reading: " + data);
+            Thread.sleep(1000); // simulate read delay
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    //WRITE method
+    public void writeData(int value) {
+        rwLock.writeLock().lock();
+        try {
+            System.out.println(Thread.currentThread().getName() + " writing: " + value);
+            data = value;
+            Thread.sleep(2000); // simulate write delay
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+}
+public class Test {
+    public static void main(String[] args) throws InterruptedException {
+    	 SharedData sharedData = new SharedData();
+
+         //  Reader threads
+         Runnable readTask = () -> {
+             for (int i = 0; i < 3; i++) {
+                 sharedData.readData();
+             }
+         };
+
+         //  Writer thread
+         Runnable writeTask = () -> {
+             for (int i = 1; i <= 3; i++) {
+                 sharedData.writeData(i * 10);
+             }
+         };
+
+         Thread t1 = new Thread(readTask, "Reader-1");
+         Thread t2 = new Thread(readTask, "Reader-2");
+         Thread t3 = new Thread(writeTask, "Writer");
+
+         t1.start();
+         t2.start();
+         t3.start();
+    	
+    	
+    }
+}
