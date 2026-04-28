@@ -1,0 +1,56 @@
+package nikhil.co.in.siem.config;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+class Locks{
+	private static int count=0;
+	public void increment(Lock lock) {
+		lock.lock();
+		try {
+			count++;
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+	
+	public static  void getCount() {
+		System.out.println(count);
+	}
+}
+public class Test {
+    public static void main(String[] args) throws InterruptedException{
+    Locks l1 = new Locks();
+    Locks l2 = new Locks();
+    Locks l3 = new Locks();
+    Lock lk1 = new ReentrantLock();
+    Runnable r1 = ()->{
+    	for(int i=0;i<100;i++) {
+    		l1.increment(lk1);
+    	}
+    };
+    Runnable r2 = ()->{
+    	for(int i=0;i<100;i++) {
+    		l2.increment(lk1);
+    	}
+    };
+    Runnable r3 = ()->{
+    	for(int i=0;i<100;i++) {
+    		l3.increment(lk1);
+    	}
+    };
+        
+    ExecutorService executors = Executors.newFixedThreadPool(3);
+    executors.submit(r1);
+    executors.submit(r2);
+    executors.submit(r3);
+    
+    executors.shutdown();
+    executors.awaitTermination(1, TimeUnit.MINUTES);
+    Locks.getCount();
+    }
+}
