@@ -1,0 +1,51 @@
+package in.nikhil.project.config;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+public class Test {
+	public static void main(String[] args) throws InterruptedException, ExecutionException {
+
+		ThreadFactory customFactory = new ThreadFactory() {
+			AtomicLong poolNumber = new AtomicLong(1);
+
+			@Override
+			public Thread newThread(Runnable r) {
+				Thread t = new Thread(r);
+				t.setName("pool-" + poolNumber.getAndIncrement() + "-thread");
+				t.setDaemon(false);
+				t.setPriority(Thread.NORM_PRIORITY);
+				return t;
+			}
+		};
+
+		RejectedExecutionHandler customPolicy = (r, executor) -> {
+			System.out.println("Task rejected! Queue full.");
+		};
+
+		ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(1, 2, 1, TimeUnit.HOURS, new ArrayBlockingQueue<>(1),
+				                          customFactory, customPolicy);
+		
+	
+			Future <?> futureObj = poolExecutor.submit(() -> {
+				System.out.println("Executing task " + 1 + " on thread " + Thread.currentThread().getName());
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+			});
+		System.out.println("check is done before get: " + futureObj.isDone());
+		futureObj.get();
+		System.out.println("check is done after get : " + futureObj.isDone());
+		
+		poolExecutor.shutdown();
+		System.out.println("main thread exiting");
+	}
+}

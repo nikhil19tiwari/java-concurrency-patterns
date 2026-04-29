@@ -1,0 +1,46 @@
+package nikhil.co.in.siem.config;
+
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+
+public class Test {
+
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        ThreadFactory customFactory = new ThreadFactory() {
+            AtomicLong poolNumber = new AtomicLong(1);
+
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("pool-" + poolNumber.getAndIncrement() + "-thread");
+                t.setDaemon(false);
+                t.setPriority(Thread.NORM_PRIORITY);
+                return t;
+            }
+        };
+        ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(
+                3,
+                5,
+                1,
+                TimeUnit.HOURS,
+                new ArrayBlockingQueue<>(1),
+                customFactory,
+                (r, ex) -> System.out.println("Task rejected! Queue full.")
+        );
+        CompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> "Hello",poolExecutor);
+        CompletableFuture<String> f2 = CompletableFuture.supplyAsync(() -> "World",poolExecutor);
+        CompletableFuture<String> f3 = CompletableFuture.supplyAsync(() -> "Java",poolExecutor);
+
+        CompletableFuture<Void> all =
+            CompletableFuture.allOf(f1, f2, f3);
+
+        CompletableFuture<String> result =
+        	    all.thenApply(v ->
+        	        f1.join() + " " + f2.join() + " " + f3.join()
+        	    );
+
+        	System.out.println(result.join());
+        System.out.println("All tasks done");
+            poolExecutor.shutdown();
+    }
+}
